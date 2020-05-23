@@ -338,10 +338,6 @@ void CSitimulationInterfaceGUIDlg::OnBnClickedButtonRightPhoticWrite()
 	dataToWrite[8] = 0x00;
 	dataToWrite[9] = 0x00;
 
-
-
-	//this->writeDataToUSB(dataToWrite, dataLengthToWrite);
-
 	this->writeDataToUSBWithoutEnumeration(dataToWrite, dataLengthToWrite);
 
 }
@@ -1127,20 +1123,16 @@ bool CSitimulationInterfaceGUIDlg::readDataFromUSBWithoutEnumeration(ULONG64 End
 	bool successResetDevice = false;
 	bool successResetPipe = false;
 	bool successGetConfigurationDescriptor = false;
-	//bool Vulcan24Found = false;
 	bool successStop = false;
 	bool successGetDeviceList = false;
 	bool successGetDescriptorRequest = false;
 	CString messageString;
 
-
 	this->mStatusMessageBoxControl.ResetContent();
-
-	//successGetDeviceList = UsbDk_GetDevicesList(&devicesArray, &numberDevices);
 
 	if (this->Vulcan24DeviceHandle != NULL)
 	{
-		if (this->Vulcan24Found) //Dev.DeviceDescriptor.idProduct == 0x01 && Dev.DeviceDescriptor.idVendor == 0x01)
+		if (this->Vulcan24Found)
 		{
 
 			TransferResult transferResultVulcan24_ReadPipe;
@@ -1179,12 +1171,15 @@ bool CSitimulationInterfaceGUIDlg::readDataFromUSBWithoutEnumeration(ULONG64 End
 			Vulcan24TransferRequest.BufferLength = dataBufferLength;
 			Vulcan24TransferRequest.TransferType = BulkTransferType; //BulkTransferType
 
+			// initializing
+			Vulcan24TransferRequest.IsochronousPacketsArraySize = dataBufferLength;
+			Vulcan24TransferRequest.IsochronousPacketsArray = dataBuffer;
+
 			// TransferRequest structure created
 			// create counters to count number of failures and success during transfers.
 			int successCount = 0;
 			int failureCount = 0;
 
-			
 			// START OPERATING ON THE DEVICE
 			//============================================================
 			//1. Get the Handle to the Device by detaching it from Windows Kernel
@@ -1233,9 +1228,6 @@ bool CSitimulationInterfaceGUIDlg::readDataFromUSBWithoutEnumeration(ULONG64 End
 					this->mStatusMessageBoxControl.AddString(messageString);
 					messageString.Format(_T("======================\n"));
 					this->mStatusMessageBoxControl.AddString(messageString);
-
-					//   this->wait(1000);
-
 				}
 
 				transferResultVulcan24_ReadPipe = UsbDk_ReadPipe(this->Vulcan24DeviceHandle, &Vulcan24TransferRequest, overlappedVulcan24);
@@ -1419,7 +1411,6 @@ bool CSitimulationInterfaceGUIDlg::writeDataToUSBWithoutEnumeration(UCHAR* dataT
 	bool successResetDevice = false;
 	bool successResetPipe = false;
 	bool successGetConfigurationDescriptor = false;
-	//bool Vulcan24Found = false;
 	bool successStop = false;
 	bool successGetDeviceList = false;
 	bool successGetDescriptorRequest = false;
@@ -1429,172 +1420,128 @@ bool CSitimulationInterfaceGUIDlg::writeDataToUSBWithoutEnumeration(UCHAR* dataT
 	this->mStatusMessageBoxControl.ResetContent();
 
 
-	//successGetDeviceList = UsbDk_GetDevicesList(&devicesArray, &numberDevices);
-
 	if (this->Vulcan24DeviceHandle != NULL)
 	{
-		//this->mStatusMessageBoxControl.AddString(_T("Enumerate USB devices succeeded"));
-
-		////  wprintf(L"Enumerate USB devices succeeded\n");
-		//messageString.Format(_T("Found %d USB devices...\n"), numberDevices);
-
-		//this->mStatusMessageBoxControl.AddString(messageString);
-		//    wprintf(L"Found %d USB devices...\n", numberDevices);
-
-		//for (ULONG deviceIndex = 0; deviceIndex < numberDevices; ++deviceIndex)
+		if (this->Vulcan24Found)
 		{
-			/* HANDLE Vulcan24DeviceHandle;
-			 auto& Dev = devicesArray[deviceIndex];*/
 
-			if (this->Vulcan24Found)
+			TransferResult transferResultVulcan24_WritePipe;
+
+			//Create the OVERLAPPED structure for asynch transfers
+			OVERLAPPED* overlappedVulcan24 = NULL; // initialize as null; to be prepared...
+			overlappedVulcan24 = new OVERLAPPED;// Create overlapped structure for each thread
+			overlappedVulcan24->Internal = 0;
+			overlappedVulcan24->InternalHigh = 0;
+			overlappedVulcan24->Offset = 0;
+			overlappedVulcan24->OffsetHigh = 0;
+			overlappedVulcan24->Pointer = 0;
+			overlappedVulcan24->Offset = 0;
+			HANDLE hEvent;
+			hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+			if (hEvent)
 			{
-
-				TransferResult transferResultVulcan24_WritePipe;
-
-				/*Vulcan24Found = true;
-
-				messageString.Format(_T("Vulcan-24 USB device found..."));
-				this->mStatusMessageBoxControl.AddString(messageString);
-				messageString.Format(_T("=============================="));
-				this->mStatusMessageBoxControl.AddString(messageString);
-				messageString.Format(_T("Filter ID: %d"), Dev.FilterID);
-				this->mStatusMessageBoxControl.AddString(messageString);
-				messageString.Format(_T("Port ID: %d"), Dev.Port);
-				this->mStatusMessageBoxControl.AddString(messageString);
-				messageString.Format(_T("Speed ID: %d"), Dev.Speed);
-				this->mStatusMessageBoxControl.AddString(messageString);
-				messageString.Format(_T("Vendor ID : 0x%X"), Dev.DeviceDescriptor.idVendor);
-				this->mStatusMessageBoxControl.AddString(messageString);
-				messageString.Format(_T("Product ID :0x%X"), Dev.DeviceDescriptor.idProduct);
-				this->mStatusMessageBoxControl.AddString(messageString);*/
-
-
-
-				//Create the OVERLAPPED structure for asynch transfers
-				OVERLAPPED* overlappedVulcan24 = NULL; // initialize as null; to be prepared...
-				overlappedVulcan24 = new OVERLAPPED;// Create overlapped structure for each thread
-				overlappedVulcan24->Internal = 0;
-				overlappedVulcan24->InternalHigh = 0;
-				overlappedVulcan24->Offset = 0;
-				overlappedVulcan24->OffsetHigh = 0;
-				overlappedVulcan24->Pointer = 0;
-				overlappedVulcan24->Offset = 0;
-				HANDLE hEvent;
-				hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-				if (hEvent)
-				{
-					overlappedVulcan24->hEvent = hEvent;
-				}
-				else
-				{
-					//wprintf(L"\nCreate event failed with error:%d", GetLastError());
-					messageString.Format(_T("Create event failed with error : % d"), GetLastError());
-					this->mStatusMessageBoxControl.AddString(messageString);
-				}
-				// OVERLAPPED structure creation complete
-
-				// Create the transfer request structure to be used during sending data (WritePipe)                    
-				USB_DK_TRANSFER_REQUEST Vulcan24TransferRequest;
-				Vulcan24TransferRequest.EndpointAddress = 0x1;// 0x0;
-
-				Vulcan24TransferRequest.Buffer = dataToWrite;
-				Vulcan24TransferRequest.BufferLength = bufferLength;
-				Vulcan24TransferRequest.TransferType = BulkTransferType; //BulkTransferType
-
-				// TransferRequest structure created
-				// create counters to count number of failures and success during transfers.
-				int successCount = 0;
-				int failureCount = 0;
-
-
-				// START OPERATING ON THE DEVICE
-				//============================================================
-				//1. Get the Handle to the Device by detaching it from Windows Kernel
-				//Vulcan24DeviceHandle = UsbDk_StartRedirect(&Dev.ID); // sometimes we have issues getting the handle! Why?
-
-				//successGetDescriptorRequest = UsbDk_GetConfigurationDescriptor(&Vulcan24ConfigDescriptorRequest,
-				//    &Vulcan24ConfigDescriptor,
-				//    &Vulcan24ConfigDescriptorLength);
-
-				//2. Reset the device
-				//successResetDevice = UsbDk_ResetDevice(Vulcan24DeviceHandle);
-				//transferResultVulcan24_ReadPipe =   UsbDk_ReadPipe(Vulcan24DeviceHandle, &requestVulcan24, overlappedVulcan24);
-
-				//3. Reset the pipe (==ENDP in HW, we will use ENDP0 for default operation during test)
-				//successResetPipe = UsbDk_ResetPipe(Vulcan24DeviceHandle, 0x0);
-
-
-				//4. To test the pipe, write to the ENDP0 100 times
-
-				// trying write data 16.05.2020
-				/*UCHAR testMessage[10] = "Test 1234";
-				Vulcan24TransferRequest.Buffer = &testMessage;*/
-				// end trying write data 16.05.2020
-
-				int index;
-				int writeCount = 1;
-				for (index = 0; index < writeCount; index++)
-				{
-
-					transferResultVulcan24_WritePipe = UsbDk_WritePipe(this->Vulcan24DeviceHandle, &Vulcan24TransferRequest, overlappedVulcan24);
-					if (transferResultVulcan24_WritePipe == 0)
-						failureCount++;
-					else
-						successCount++;
-				}
-
-				messageString.Format(_T("Writing to Pipe is Complete. Total Count: %d | Success Count: %d | Failure Count: %d\n"), 1, successCount, failureCount);
-				this->mStatusMessageBoxControl.AddString(messageString);
-
-
-
-				if (failureCount > 0)
-				{
-					int errorCode = GetLastError();
-
-					messageString.Format(_T("Error Code is: %d\n"), errorCode);
-					this->mStatusMessageBoxControl.AddString(messageString);
-
-
-				}
-
-
-
-				// 5. Start closing the interface by resetting the pipe
-				//successResetPipe = UsbDk_ResetPipe(Vulcan24DeviceHandle, 0x0);
-				//// 6. Reset the device
-				//successResetDevice = UsbDk_ResetDevice(Vulcan24DeviceHandle);
-
-				//// 7. Give the driver back to Windows Kernel
-				//successStop = UsbDk_StopRedirect(Vulcan24DeviceHandle);
-
+				overlappedVulcan24->hEvent = hEvent;
 			}
 			else
 			{
+				messageString.Format(_T("Create event failed with error : % d"), GetLastError());
+				this->mStatusMessageBoxControl.AddString(messageString);
+			}
+			// OVERLAPPED structure creation complete
+
+			// Create the transfer request structure to be used during sending data (WritePipe)                    
+			USB_DK_TRANSFER_REQUEST Vulcan24TransferRequest;
+			Vulcan24TransferRequest.EndpointAddress = 0x1;// 0x0;
+
+			Vulcan24TransferRequest.Buffer = dataToWrite;
+			Vulcan24TransferRequest.BufferLength = bufferLength;
+			Vulcan24TransferRequest.TransferType = BulkTransferType; //BulkTransferType
+
+			// TransferRequest structure created
+			// create counters to count number of failures and success during transfers.
+			int successCount = 0;
+			int failureCount = 0;
+
+
+			// START OPERATING ON THE DEVICE
+			//============================================================
+			//1. Get the Handle to the Device by detaching it from Windows Kernel
+			//Vulcan24DeviceHandle = UsbDk_StartRedirect(&Dev.ID); // sometimes we have issues getting the handle! Why?
+
+			//successGetDescriptorRequest = UsbDk_GetConfigurationDescriptor(&Vulcan24ConfigDescriptorRequest,
+			//    &Vulcan24ConfigDescriptor,
+			//    &Vulcan24ConfigDescriptorLength);
+
+			//2. Reset the device
+			//successResetDevice = UsbDk_ResetDevice(Vulcan24DeviceHandle);
+			//transferResultVulcan24_ReadPipe =   UsbDk_ReadPipe(Vulcan24DeviceHandle, &requestVulcan24, overlappedVulcan24);
+
+			//3. Reset the pipe (==ENDP in HW, we will use ENDP0 for default operation during test)
+			//successResetPipe = UsbDk_ResetPipe(Vulcan24DeviceHandle, 0x0);
+
+
+			//4. To test the pipe, write to the ENDP0 100 times
+
+			// trying write data 16.05.2020
+			/*UCHAR testMessage[10] = "Test 1234";
+			Vulcan24TransferRequest.Buffer = &testMessage;*/
+			// end trying write data 16.05.2020
+
+			int index;
+			int writeCount = 1000;
+			for (index = 0; index < writeCount; index++)
+			{
+
+				transferResultVulcan24_WritePipe = UsbDk_WritePipe(this->Vulcan24DeviceHandle, &Vulcan24TransferRequest, overlappedVulcan24);
+				if (transferResultVulcan24_WritePipe == 0)
+					failureCount++;
+				else
+					successCount++;
+			}
+
+			messageString.Format(_T("Writing to Pipe is Complete. Total Count: %d | Success Count: %d | Failure Count: %d\n"), 1, successCount, failureCount);
+			this->mStatusMessageBoxControl.AddString(messageString);
+
+
+
+			if (failureCount > 0)
+			{
+				int errorCode = GetLastError();
+
+				messageString.Format(_T("Error Code is: %d\n"), errorCode);
+				this->mStatusMessageBoxControl.AddString(messageString);
 
 
 			}
 
+
+
+			// 5. Start closing the interface by resetting the pipe
+			//successResetPipe = UsbDk_ResetPipe(Vulcan24DeviceHandle, 0x0);
+			//// 6. Reset the device
+			//successResetDevice = UsbDk_ResetDevice(Vulcan24DeviceHandle);
+
+			//// 7. Give the driver back to Windows Kernel
+			//successStop = UsbDk_StopRedirect(Vulcan24DeviceHandle);
+			return 0;
+
 		}
-		if (Vulcan24Found == false)
+		else
 		{
-			// wprintf(L"Vulcan-24 USB device NOT found...\n");
-			messageString.Format(_T("Vulcan-24 USB device NOT found..."));
-			this->mStatusMessageBoxControl.AddString(messageString);
-
+		messageString.Format(_T("Vulcan-24 USB device NOT found..."));
+		this->mStatusMessageBoxControl.AddString(messageString);
+		return -1;
 
 		}
-
-		return 0;
 
 	}
+
 	else
 	{
-		this->mStatusMessageBoxControl.ResetContent();
-		messageString.Format(_T("Vulcan24 Device is Not Yet Connected. Try Connecting USB First!"));
-		this->mStatusMessageBoxControl.AddString(messageString);
-
-		return -1;
+	this->mStatusMessageBoxControl.ResetContent();
+	messageString.Format(_T("Vulcan24 Device is Not Yet Connected. Try Connecting USB First!"));
+	this->mStatusMessageBoxControl.AddString(messageString);
+	return -1;
 	}
 
 }
