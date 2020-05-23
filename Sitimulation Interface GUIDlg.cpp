@@ -1488,10 +1488,9 @@ bool CSitimulationInterfaceGUIDlg::writeDataToUSBWithoutEnumeration(UCHAR* dataT
 			// end trying write data 16.05.2020
 
 			int index;
-			int writeCount = 1000;
+			int writeCount = 1;
 			for (index = 0; index < writeCount; index++)
 			{
-
 				transferResultVulcan24_WritePipe = UsbDk_WritePipe(this->Vulcan24DeviceHandle, &Vulcan24TransferRequest, overlappedVulcan24);
 				if (transferResultVulcan24_WritePipe == 0)
 					failureCount++;
